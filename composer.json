@@ -1,5 +1,5 @@
 {
-    "name": "sergiosgc/config",
+    "name": "sergiosgc/config-trait",
     "description": "Config trait for web Application classes",
     "keywords": ["rest", "router"],
     "homepage": "https://github.com/sergiosgc/composer-config",
