@@ -6,17 +6,26 @@ trait Config {
             if (is_null($this->config)) {
                 // Include configuration
                 {
-                    foreach(array($this->paths['config'], $this->paths['config'] . '/' . strtolower("cli" == php_sapi_name() ? 'cli' : $_SERVER['HTTP_HOST'])) as $configDir) {
-                        if (!is_dir($configDir)) continue;
-                        $dir = opendir($configDir);
-                        while (($file = readdir($dir)) !== false) {
-                            if ($file == '.' || $file == '..') continue;
-                            if (is_file($configDir . '/' . $file) && preg_match('_\.php$_', $file)) include($configDir . '/' . $file);
-                        }
-                        unset($file);
-                        unset($dir);
-                    }
-                    unset($configDir);
+                    $configFiles = [$this->paths['config'] ];
+                    if ( "cli" == php_sapi_name() ) {
+                        $configFiles[] = $this->paths['config'] . '/' . (isset($_SERVER['LOCAL_CONFIG']) ? $_SERVER['LOCAL_CONFIG'] : 'cli');
+                    } else $configFiles[] = $this->paths['config'] . '/' . (isset($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : 'http');
+                    array_map(
+                        fn($f) => include($f),
+                        array_filter(
+                            array_reduce(
+                                array_filter( $configFiles, "is_dir" ),
+                                function ($acc, $d) {
+                                    $dir = opendir($d);
+                                    while (($file = readdir($dir)) !== false) $acc[] = $d . '/' . $file;
+                                    closedir($dir);
+                                    return $acc;
+                                },
+                                []
+                            ),
+                            fn($f) => preg_match('_\.php$_', $f)
+                        )
+                    );
                 }
                 if (is_null($this->config)) throw new Exception('Configuration is still null after including config dir');
             }
